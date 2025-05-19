@@ -1,12 +1,14 @@
+
 /*
-reNamso v2.0 is th new and modern Namso CCGEN.
-RE-WRITED BY YAEL MASSIEU.
+reNamso v2.0 is the new and modern Namso CCGEN.
+RE-WRITTEN BY YAEL MASSIEU.
 Instagram: @is.leay
 Portfolio: https://yael.pages.dev/
 */
+
 document.addEventListener('DOMContentLoaded', () => {
   showCurrentYear();
-  document.getElementById('generar').addEventListener('click', ()=> {
+  document.getElementById('generar').addEventListener('click', () => {
     const maxCards = 100;
     const binInput = document.getElementById('ccpN').value;
     generateCardNumbers(binInput, maxCards);
@@ -38,14 +40,16 @@ const randomNum = (min, max) => Math.floor(Math.random() * (max - min + 1)) + mi
 
 const format = (input, length, fillChar = '0', padding = 0) => {
   let result = '' + input;
-  length = Number.parseFloat(length);
+  length = Number.parseInt(length);
   if (!fillChar || !padding) {
     fillChar = '0';
     padding = 0;
   }
-  const actuaLength = result.length;
-  if (actuaLength < length) {
-    result = padding === 0 ? fillChar.repeat(length - actuaLength) + result : result + fillChar.repeat(length - actuaLength);
+  const actualLength = result.length;
+  if (actualLength < length) {
+    result = padding === 0
+      ? fillChar.repeat(length - actualLength) + result
+      : result + fillChar.repeat(length - actualLength);
   }
   return result;
 };
@@ -63,17 +67,17 @@ function generateCardNumbers(cardBin, maxCards) {
       isGenerated = false;
       isValidC = false;
       generatedCard = '';
-      for (let i = maxCards; i >= 1; i--) {
+      for (let attempt = 0; attempt < maxCards; attempt++) {
         document.getElementById('output2').value = 'Generating...';
-        generatedCard = randomSustitute(binCard, 'x', '0123456789');
-        const formattedCardNumber = deleteInvalidShits(generatedCard, ' -/abcdefghijklmnopqrstuvwyzABCDEFGHIJLMNOPQRSTUVWYZ');
+        generatedCard = randomSubstitute(binCard, 'x', '0123456789');
+        const formattedCardNumber = deleteInvalidChars(generatedCard, ' -/abcdefghijklmnopqrstuvwyzABCDEFGHIJLMNOPQRSTUVWYZ');
         isGenerated = isValidLuhn(formattedCardNumber);
         isValidC = isValidChecksum(formattedCardNumber, checkCardBrand);
         if (isGenerated && isValidC) break;
       }
       if (isGenerated && isValidC) {
         const selectedSeparatorIndex = document.getElementById('ccnsp').selectedIndex;
-        const separator = (selectedSeparatorIndex === 1) ? ' ' : (selectedSeparatorIndex === 2) ? '-' : '';
+        const separator = selectedSeparatorIndex === 1 ? ' ' : selectedSeparatorIndex === 2 ? '-' : '';
         let formattedNumber = '';
         for (let i = 0; i < generatedCard.length; i++) {
           const char = (generatedCard[i] === ' ') ? separator : generatedCard[i];
@@ -82,16 +86,16 @@ function generateCardNumbers(cardBin, maxCards) {
         let expDate = '';
         if (document.getElementById('ccexpdat').checked) {
           const currentDate = new Date();
-          const month = (document.getElementById('emeses').value === 'rnd') ? format(randomNum(1, 12), 2, '0', 0) : document.getElementById('emeses').value;
-          const year = (document.getElementById('eyear').value === 'rnd') ? (currentDate.getFullYear() + randomNum(2, 6)) : document.getElementById('eyear').value;
+          const month = document.getElementById('emeses').value === 'rnd' ? format(randomNum(1, 12), 2, '0', 0) : document.getElementById('emeses').value;
+          const year = document.getElementById('eyear').value === 'rnd' ? currentDate.getFullYear() + randomNum(2, 6) : document.getElementById('eyear').value;
           expDate = `|${month}|${year}`;
         }
-        const randomCVV = (document.getElementById('eccv').value === 'rnd' && document.getElementById('ccvi').checked)
-          ? ((formattedNumber.startsWith('34') || formattedNumber.startsWith('37'))
-            ? (Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000)
-            : (Math.floor(Math.random() * (998 - 112 + 1)) + 112))
+        const randomCVV = document.getElementById('eccv').value === 'rnd' && document.getElementById('ccvi').checked
+          ? (formattedNumber.startsWith('34') || formattedNumber.startsWith('37'))
+            ? Math.floor(Math.random() * (9999 - 1000 + 1)) + 1000
+            : Math.floor(Math.random() * (998 - 112 + 1)) + 112
           : document.getElementById('eccv').value;
-        result += `${formatOfGen}${formattedNumber}${expDate}${(document.getElementById('ccvi').checked) ? ('|' + randomCVV) : ''}${(document.getElementById('ccbank').checked) ? ('|' + checkCardBrand) : ''}\n`;
+        result += `${formatOfGen}${formattedNumber}${expDate}${document.getElementById('ccvi').checked ? `|${randomCVV}` : ''}${document.getElementById('ccbank').checked ? `|${checkCardBrand}` : ''}\n`;
       } else {
         result = 'Error';
         break;
@@ -110,7 +114,7 @@ function getCardBrand(cardNumber) {
     { pattern: /^(30[0-5]|309|36|38|39)/, name: 'Diners Club' },
     { pattern: /^35(2[89]|[3-8][0-9])/, name: 'JCB' }
   ];
-  cardNumber = deleteInvalidShits(cardNumber, ' -/abcdefghijklmnopqrstuvwyzABCDEFGHIJLMNOPQRSTUVWYZ');
+  cardNumber = deleteInvalidChars(cardNumber, ' -/abcdefghijklmnopqrstuvwyzABCDEFGHIJLMNOPQRSTUVWYZ');
   for (let i = 0; i < brands.length; i++) {
     if (cardNumber.match(brands[i].pattern)) {
       return brands[i].name;
@@ -119,18 +123,11 @@ function getCardBrand(cardNumber) {
   return 'Unknown';
 }
 
-function isValidChecksum(cardNumber) {
-  const weights = [2, 1];
-  let sum = 0;
-  let index = 0;
-  for (let i = cardNumber.length - 2; i >= 0; i--) {
-    const result = parseInt(cardNumber[i], 10) * weights[index % weights.length];
-    sum += Math.floor(result / 10) + (result % 10);
-    index++;
+function isValidChecksum(cardNumber, cardBrand) {
+  if (cardBrand === 'American Express' && cardNumber.length === 15) {
+    return isValidLuhn(cardNumber);
   }
-  const remainder = 10 - (sum % 10);
-  const checksum = (10 - ((sum + remainder) % 10)) % 10;
-  return parseInt(cardNumber[cardNumber.length - 1], 10) === checksum ? checksum : parseInt(cardNumber[cardNumber.length - 1], 10);
+  return cardNumber.length === 16 && isValidLuhn(cardNumber);
 }
 
 function isValidLuhn(cardNumber) {
@@ -150,20 +147,20 @@ function isValidLuhn(cardNumber) {
   return (sum % 10) === 0;
 }
 
-function deleteInvalidShits(input, invalidChars) {
+function deleteInvalidChars(input, invalidChars) {
   let result = '';
   for (let i = 0; i < input.length; i++) {
-    const justInputs = input.charAt(i);
-    if (invalidChars.indexOf(justInputs) === -1) result += justInputs;
+    const char = input.charAt(i);
+    if (invalidChars.indexOf(char) === -1) result += char;
   }
   return result;
 }
 
-function randomSustitute(input, charsToReplace, replacementChars = '0123456789') {
+function randomSubstitute(input, charsToReplace, replacementChars = '0123456789') {
   let result = '';
   for (let i = 0; i < input.length; i++) {
-    const justInputs = input.charAt(i);
-    if (charsToReplace.indexOf(justInputs) === -1) result += justInputs;
+    const char = input.charAt(i);
+    if (charsToReplace.indexOf(char) === -1) result += char;
     else result += replacementChars.charAt(Math.floor(Math.random() * replacementChars.length));
   }
   return result;
